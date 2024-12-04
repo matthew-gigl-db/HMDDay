@@ -49,22 +49,3 @@ dbutils.fs.mkdirs(output_path)
 for idx, row in enumerate(data.collect()):
     file_path = os.path.join(output_path, f"resource_{idx}.json")
     dbutils.fs.put(file_path, row['resource'], overwrite=True)
-
-# COMMAND ----------
-
-s3_url = "https://hls-eng-data-public.s3.amazonaws.com/data/synthea/fhir/fhir/*.json"
-volume_path = f"/Volumes/{catalog_use}/{schema_use}/landing/fhir/"
-
-# Copy the file from S3 to the volume
-dbutils.fs.cp(s3_url, volume_path)
-
-# COMMAND ----------
-
-# MAGIC %sh
-# MAGIC cd /Volumes/main/hm_dday/landing/;
-# MAGIC pwd;
-# MAGIC wget -r -np -nH http://hls-eng-data-public.s3.amazonaws.com/;
-
-# COMMAND ----------
-
-
