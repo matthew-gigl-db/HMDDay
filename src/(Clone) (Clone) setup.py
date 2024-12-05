@@ -31,32 +31,13 @@ display(
 
 # COMMAND ----------
 
-# MAGIC %md
-# MAGIC Uncomment the below code chunck for running with a proxy.  
-
-# COMMAND ----------
-
-# %sh
-
-# export https_proxy=inetgate.highmark.com:9121
-
-# COMMAND ----------
-
-import os
-
-os.environ['VOLUME_PATH'] = f"/Volumes/{catalog_use}/{schema_use}/landing/"
-
-# COMMAND ----------
-
-# MAGIC %sh 
+# MAGIC %sh
 # MAGIC
-# MAGIC echo $VOLUME_PATH;
+# MAGIC export https_proxy=inetgate.highmark.com:9121
 
 # COMMAND ----------
 
 # MAGIC %sh
-# MAGIC
-# MAGIC cd $VOLUME_PATH;
 # MAGIC
 # MAGIC echo "Abe_Bernhard_4a0bf980-a2c9-36d6-da55-14d7aa5a85d9.json
 # MAGIC Abe_Huels_cec871b4-8fe4-03d1-4318-b51bc279f004.json
@@ -152,15 +133,85 @@ os.environ['VOLUME_PATH'] = f"/Volumes/{catalog_use}/{schema_use}/landing/"
 
 # COMMAND ----------
 
+# MAGIC %sh
+# MAGIC
+# MAGIC rm /Volumes/dba_lab/hm_dday/landing/fhir/*
+
+# COMMAND ----------
+
 # MAGIC %sh 
 # MAGIC
-# MAGIC # uncomment for proxy
-# MAGIC # export https_proxy=inetgate.highmark.com:9121
-# MAGIC # export http_proxy=inetgate.highmark.com:9121
-# MAGIC
-# MAGIC cd $VOLUME_PATH;
-# MAGIC mkdir fhir;
-# MAGIC cd fhir;
+# MAGIC export https_proxy=inetgate.highmark.com:9121
+# MAGIC export http_proxy=inetgate.highmark.com:9121
 # MAGIC
 # MAGIC while read line; do 
-# MAGIC curl -vvv -X GET  "http://hls-eng-data-public.s3.amazonaws.com/data/synthea/fhir/fhir/${line}" > $VOLUME_PATH/fhir/${line}; done < $VOLUME_PATH/files.txt
+# MAGIC curl -vvv -X GET  "http://hls-eng-data-public.s3.amazonaws.com/data/synthea/fhir/fhir/${line}" > /Volumes/dba_lab/hm_dday/landing/fhir/${line}; done < files.txt
+# MAGIC
+
+# COMMAND ----------
+
+# MAGIC %sh
+# MAGIC ls 
+
+# COMMAND ----------
+
+from pyspark.sql.functions import col
+import os
+
+os.environ['https_proxy'] = "inetgate.highmark.com:9121"
+
+data = spark.read.text("s3://hls-eng-data-public/data/synthea/fhir/fhir/Zoraida_Senger_12eaf026-020d-45b8-d2b6-d4b72c6012e2.json", wholetext=True).select(col("value").alias("resource"))
+
+# COMMAND ----------
+
+import json
+import os
+
+output_path = "/Volumes/dba_lab/hm_dday/landing/fhir/"
+
+# Ensure the output directory exists
+dbutils.fs.mkdirs(output_path)
+
+# Write each row as an individual JSON file
+for idx, row in enumerate(data.collect()):
+    file_path = os.path.join(output_path, f"resource_{idx}.json")
+    dbutils.fs.put(file_path, row['resource'], overwrite=True)
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC
+# MAGIC list files "/Volumes/hm_dday_mg/hm_dday/landing/fhir"
+
+# COMMAND ----------
+
+source_path = "/Volumes/hm_dday_mg/hm_dday/landing/fhir/"
+destination_path = "/Volumes/dba_lab/hm_dday/landing/fhir/"
+
+# Ensure the destination directory exists
+dbutils.fs.mkdirs(destination_path)
+
+# List all files in the source directory
+files = dbutils.fs.ls(source_path)
+
+# Copy each file to the destination directory
+for file in files:
+    dbutils.fs.cp(file.path, os.path.join(destination_path, os.path.basename(file.path)))
+
+# COMMAND ----------
+
+# MAGIC %sh
+# MAGIC
+# MAGIC
+# MAGIC cp /Volumes/hm_dday_mg/hm_dday/landing/fhir/resource_0.json /Volumes/dba_lab/hm_dday/landing/fhir/
+
+# COMMAND ----------
+
+# MAGIC %sh
+# MAGIC
+# MAGIC cp -r /Volumes/hm_dday_mg/hm_dday /Volumes/dba_lab/hm_dday/landing
+
+# COMMAND ----------
+
+/Volumes/dba_lab/hm_dday/landing/fhir/
+/Volumes/hm_dday_mg/hm_dday/landing/fhir/

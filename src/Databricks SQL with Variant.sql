@@ -1,17 +1,10 @@
 -- Databricks notebook source
-SELECT REPLACE(SPLIT(current_user(), '@')[0], '.', '-');
-
--- COMMAND ----------
-
 DECLARE OR REPLACE VARIABLE catalog_use STRING DEFAULT 'main';
 DECLARE OR REPLACE VARIABLE schema_use STRING DEFAULT 'hm_dday';
-DECLARE OR REPLACE VARIABLE host_url STRING DEFAULT 'https://adb-984752964297111.11.azuredatabricks.net/';
-DECLARE OR REPLACE VARIABLE secret_scope STRING DEFAULT (SELECT REPLACE(SPLIT(current_user(), '@')[0], '.', '-'));
-DECLARE OR REPLACE VARIABLE token STRING DEFAULT (SELECT secret(secret_scope, 'databricks_pat'));
 
 -- COMMAND ----------
 
-SET VARIABLE catalog_use = :`catalog_use`;
+SET VARIABLE catalog_use = :`catalog_use`; 
 SET VARIABLE schema_use = :`schema_use`; 
 
 -- COMMAND ----------
@@ -20,10 +13,6 @@ SELECT
   catalog_use
   ,schema_use
 ;
-
--- COMMAND ----------
-
-CREATE SCHEMA IF NOT EXISTS IDENTIFIER(catalog_use || '.' || schema_use);
 
 -- COMMAND ----------
 
@@ -38,11 +27,20 @@ SELECT
 
 -- COMMAND ----------
 
-CREATE VOLUME IF NOT EXISTS IDENTIFIER(catalog_use || '.' || schema_use || '.landing');
+SHOW VOLUMES;
 
 -- COMMAND ----------
 
-SHOW VOLUMES;
+CREATE TABLE my_table AS
+SELECT * FROM read_files('/Volumes/main/hm_dday/landing/', format => 'text');
+
+-- COMMAND ----------
+
+SELECT * from my_table;
+
+-- COMMAND ----------
+
+LIST '/Volumes/' || catalog_use || schema_use || '/landing');
 
 -- COMMAND ----------
 
@@ -74,3 +72,7 @@ DESCRIBE EXTERNAL LOCATION
 COPY INTO '/Volumes/' || catalog_use || '/' || schema_use || '/landing/raw_json_files'
 FROM 's3://hls-eng-data-public/data/synthea/fhir/fhir/*json'
 FILEFORMAT = JSON;
+
+-- COMMAND ----------
+
+CREATE TABLE 
