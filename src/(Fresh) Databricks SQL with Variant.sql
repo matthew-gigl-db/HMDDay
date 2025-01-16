@@ -33,7 +33,7 @@ SHOW VOLUMES;
 
 DECLARE OR REPLACE VARIABLE list_stmnt STRING;
 
-SET VAR list_stmnt = "LIST '/Volumes/" || catalog_use || "/" || schema_use || "/synthetic_files_raw/'";
+SET VAR list_stmnt = "LIST '/Volumes/" || catalog_use || "/" || schema_use || "/landing/'";
 
 SELECT list_stmnt;
 
@@ -43,7 +43,7 @@ EXECUTE IMMEDIATE list_stmnt;
 
 -- COMMAND ----------
 
-SET VAR list_stmnt = "LIST '/Volumes/" || catalog_use || "/" || schema_use || "/synthetic_files_raw/output/fhir/'";
+SET VAR list_stmnt = "LIST '/Volumes/" || catalog_use || "/" || schema_use || "/landing/fhir/'";
 
 SELECT list_stmnt;
 
@@ -56,13 +56,16 @@ DROP TABLE IF EXISTS fhir_bronze;
 CREATE OR REFRESH STREAMING TABLE fhir_bronze 
 COMMENT 'Ingest FHIR JSON records as Full Text STRING'
 TBLPROPERTIES (
+  'delta.enableChangeDataFeed' = 'true',
+  'delta.enableDeletionVectors' = 'true',
+  'delta.enableRowTracking' = 'true',
   'quality' = 'bronze'
 )
 AS SELECT
   _metadata as file_metadata
   ,* 
 FROM STREAM read_files(
-  '/Volumes/mgiglia/synthea/synthetic_files_raw/output/fhir/'
+  '/Volumes/main/hm_dday/landing/fhir/'
   ,format => 'text'
   ,wholeText => true
 )
@@ -82,7 +85,10 @@ DROP TABLE IF EXISTS fhir_bronze_variant;
 CREATE OR REFRESH STREAMING TABLE fhir_bronze_variant 
 COMMENT 'Evaluate FHIR JSON records as VARIANT'
 TBLPROPERTIES (
-  'quality' = 'bronze'
+  'delta.enableChangeDataFeed' = 'true'
+  ,'delta.enableDeletionVectors' = 'true'
+  ,'delta.enableRowTracking' = 'true'
+  ,'quality' = 'bronze'
   ,'pipelines.channel' = 'PREVIEW'
   ,'delta.feature.variantType-preview' = 'supported'
 )
@@ -136,7 +142,10 @@ DROP TABLE IF EXISTS fhir_resources;
 CREATE OR REFRESH STREAMING TABLE fhir_resources 
 COMMENT 'Exploded FHIR Resources'
 TBLPROPERTIES (
-  'quality' = 'bronze'
+  'delta.enableChangeDataFeed' = 'true'
+  ,'delta.enableDeletionVectors' = 'true'
+  ,'delta.enableRowTracking' = 'true'
+  ,'quality' = 'bronze'
   ,'pipelines.channel' = 'PREVIEW'
   ,'delta.feature.variantType-preview' = 'supported'
 )
