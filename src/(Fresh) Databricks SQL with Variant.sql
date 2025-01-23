@@ -261,8 +261,6 @@ ORDER BY cnt DESC
 WITH address_fixed as (
   SELECT
     CAST(id as STRING) as patient_id
-    -- ,address.value as address
-    -- ,extension.value as extension
     ,CAST(coordinates.value:url as STRING) as coordinate_type
     ,CAST(coordinates.value:valueDecimal as FLOAT) as coordinates
   FROM hm_dday.patient
